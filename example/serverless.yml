@@ -1,0 +1,31 @@
+service: scanner-test
+
+provider:
+  name: aws
+  runtime: python3.7
+  stage: dev
+  region: us-east-1
+
+resources:
+  Resources:
+    ScannedTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: "scanner-test-table"
+        AttributeDefinitions:
+          - AttributeName: "Id"
+            AttributeType: "S"
+        BillingMode: PAY_PER_REQUEST
+        KeySchema:
+          - AttributeName: "Id"
+            KeyType: "HASH"
+    IngestKinesisStream:
+      Type: AWS::Kinesis::Stream
+      Properties:
+        Name: "scanner-test-stream"
+        ShardCount: 1
+  Outputs:
+    ScannedTableArn:
+      Value: { Fn::GetAtt: [ScannedTable, Arn] }
+    IngestStreamArn:
+      Value: { Fn::GetAtt: [IngestKinesisStream, Arn] }

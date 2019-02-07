@@ -3,7 +3,6 @@ service: serverless-dynamodb-scanner
 custom:
   dynamodbTableArn: ''
   kinesisStreamArn: ''
-  lastEvaluatedParameter: '/ddb-scanner/last-evaluated-key'
 
 provider:
   name: aws
@@ -13,17 +12,17 @@ provider:
   iamRoleStatements:
     - Effect: "Allow"
       Action:
-        - "ddb:Scan"
-      Resource: {self:custom.dynamodbTableArn}
+        - "dynamodb:Scan"
+      Resource: ${self:custom.dynamodbTableArn}
     - Effect: "Allow"
       Action:
         - "kinesis:PutRecords"
-      Resource: {self:custom.kinesisStreamArn}
+      Resource: ${self:custom.kinesisStreamArn}
     - Effect: "Allow"
       Action:
         - "ssm:GetParameter"
         - "ssm:PutParameter"
-      Resource: 'arn:aws:ssm:*:*:parameter/{self:custom.lastEvaluatedParameter}'
+      Resource: 'arn:aws:ssm:*:*:parameter/ddbScanner/lastEvaluatedKey'
     - Effect: "Allow"
       Action:
         - "lambda:InvokeFunction"
@@ -31,7 +30,10 @@ provider:
   environment:
     TABLE_ARN: ${self:custom.dynamodbTableArn}
     STREAM_ARN: ${self:custom.kinesisStreamArn}
-    LAST_EVALUATED_PARAMETER: ${self:custom.lastEvaluatedParameter}
+
+packaging:
+  exclude:
+    - example/**
 
 functions:
   scanner:

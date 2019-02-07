@@ -9,7 +9,7 @@ dynamodb = boto3.client('dynamodb')
 ssm = boto3.client('ssm')
 awslambda = boto3.client('lambda')
 
-LAST_EVALUATED_PARAMETER = os.environ['LAST_EVALUATED_PARAMETER']
+LAST_EVALUATED_PARAMETER = '/ddbScanner/lastEvaluatedKey'
 
 def scanner(event, context):
     config = get_config()
@@ -21,9 +21,9 @@ def scanner(event, context):
             'Limit': 500
         }
         if last_evaluated_key:
-            params['LastEvaluatedKey'] = last_evaluated_key
+            params['ExclusiveStartKey'] = last_evaluated_key
 
-        resp = dynamodb.scan(params)
+        resp = dynamodb.scan(**params)
         records = []
         for item in resp['Items']:
             records.append({
@@ -31,15 +31,16 @@ def scanner(event, context):
                 'PartitionKey': secrets.token_hex(12) # Partition key shouldn't matter much here.
             })
 
-        put_records(config['table_name'], records)
+        put_records(config['stream_name'], records)
 
-        if not resp['LastEvaluatedKey']:
+        if 'LastEvaluatedKey' not in resp:
             # Scan is complete. Time to finish.
             break
         ssm.put_parameter(
             Name=LAST_EVALUATED_PARAMETER,
             Value=json.dumps(resp['LastEvaluatedKey']),
-            Type='String'
+            Type='String',
+            Overwrite=True
         )
         last_evaluated_key = resp['LastEvaluatedKey']
 
@@ -61,9 +62,10 @@ def get_config():
     stream_name = stream_arn.split('/')[1]
 
     try:
-        last_evaluated_key = json.loads(ssm.get_parameter(
+        resp = ssm.get_parameter(
             Name=LAST_EVALUATED_PARAMETER
-        ))
+        )
+        last_evaluated_key = json.loads(resp['Parameter']['Value'])
     except ssm.exceptions.ParameterNotFound:
         last_evaluated_key = ''
 
@@ -74,10 +76,10 @@ def get_config():
     }
 
 
-def put_records(table_name, records):
+def put_records(stream_name, records):
     resp = kinesis.put_records(
         Records=records,
-        TableName=table_name
+        StreamName=stream_name
     )
 
     if resp['FailedRecordCount'] == 0:
@@ -88,4 +90,4 @@ def put_records(table_name, records):
         if 'ErrorCode' in record:
             failed_records.append(records[i])
 
-    return put_records(table_name, failed_records)
+    return put_records(stream_name, failed_records)
