@@ -1,12 +1,10 @@
-# Serverless DynamoDB Scanner (WIP)
+# Serverless DynamoDB Scanner
 
 This is a Serverless application that scans a given DynamoDB table and inserts every item into a Kinesis Stream. You can then process the Kinesis stream, allowing you to perform an operation on all existing items in a DynamoDB table.
 
 It was inspired by a tweet from [Eric Hammond](https://twitter.com/esh):
 
 <blockquote class="twitter-tweet" data-lang="en"><p lang="en" dir="ltr">We really want to run some code against every item in a DynamoDB table.<br><br>Surely there&#39;s a sample project somewhere that scans a DynamoDB table, feeds records into a Kinesis Data Stream, which triggers an AWS Lambda function?<br><br>We can scale DynamoDB and Kinesis manually. <a href="https://t.co/ZyAiLfLpWh">https://t.co/ZyAiLfLpWh</a></p>&mdash; Eric Hammond (@esh) <a href="https://twitter.com/esh/status/1092580853429952512?ref_src=twsrc%5Etfw">February 5, 2019</a></blockquote>
-
-**This is untested. Use at your own risk.**
 
 ## Usage:
 
